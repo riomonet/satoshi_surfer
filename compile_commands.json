@@ -1,0 +1,14 @@
+[
+    {
+        "arguments": [
+            "gcc",
+            "-c",
+            "-std=gnu89",
+            "-o",
+            "btquery",
+            "interface.c"
+        ],
+        "directory": "/home/alpha/projects/client-server",
+        "file": "interface.c"
+    }
+]
