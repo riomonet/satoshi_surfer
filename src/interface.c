@@ -1,11 +1,6 @@
 #include <stdio.h>
-#include <netdb.h>
-#include <arpa/inet.h>
-#include <sys/types.h>
-#include <sys/socket.h>
 #include <string.h>
 #include <stdlib.h>
-#include <netinet/in.h>
 #include <jansson.h> 
 
 #define MAX_BLOCK_SIZE 4000000
@@ -31,7 +26,7 @@ void p_query(char * cmdstr, char **str)
 	char			c;
 	int			i = 0;
 
-	
+	//check return values from bitcoin-cli commands
 	strcat(command, cmdstr);
 
 	input = popen(command, "r");
@@ -45,7 +40,19 @@ void p_query(char * cmdstr, char **str)
 
 	*str = malloc (strlen(buf) * sizeof(char));
 	strcpy(*str, buf);
+}
 
+int list_all_tx(json_t *array) //fiXME
+{
+	int i;
+
+	for (i = 0; i < json_array_size(array); ++i) {
+		json_t *string = json_array_get(array, i);
+		printf("%s\n",json_string_value(string));
+	}
+
+
+	return 0;
 }
 
 int main(int argc, char *argv[])
@@ -56,21 +63,18 @@ int main(int argc, char *argv[])
 	char			*chain_tip;
 	json_t			*root;
 	json_error_t		error;
-	int			x, i = 0;
+	int			i;
 
 
         p_query("getblockcount", &chain_tip);
-        p_query("getblockhash 990000", &block.hash);
+        p_query("getblockhash ", &block.hash);
 	strcat(cmdstr, block.hash);
 	p_query(cmdstr, &block.data);
+	printf("%s\n", cmdstr);
 
 	root = json_loads(block.data, 0, &error);
         json_t *array = json_object_get(root, "tx");
-	json_t *string = json_array_get(array, 0);
-	printf("%s\n",json_string_value(string));
 
-
-	
 
         return 0;
 }
