@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <jansson.h> 
 
-
 /*
 get block count.
  enter block number
@@ -16,6 +15,8 @@ get block hash from block number
 get raw-transaction list from blockhash
 decode raw transaction
 */
+
+
 #define MAX_BLOCK_SIZE 4000000
 
 struct block
@@ -27,6 +28,13 @@ struct block
   int  totfees;
   int  totval;
 };
+
+struct tx
+{
+  //inputs
+  //outputs
+  
+};   
 
 int main(int argc, char *argv[])
 {
