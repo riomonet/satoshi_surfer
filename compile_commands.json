@@ -3,10 +3,10 @@
         "arguments": [
             "gcc",
             "-c",
-            "-std=gnu89",
+            "-std=gnu99",
             "-o",
-            "btquery",
-            "interface.c"
+            "tui",
+            "tui.c"
         ],
         "directory": "/home/alpha/projects/client-server",
         "file": "interface.c"
