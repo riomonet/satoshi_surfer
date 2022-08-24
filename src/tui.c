@@ -28,6 +28,7 @@
 
 void getblockdata(struct block *);
 void getblockhash(struct block *, int);
+void getrawtransaction(WINDOW *, const char *);
 const char *retrievetx(struct block *, int);
 int print_json(struct block *, WINDOW *, int);
 int getmaxheight(void);
@@ -64,14 +65,18 @@ int main(int argc, char *argv[])
 
 		if (c == (int) 'c' && cur_tx_index < tx_cnt) {
 			cur_tx_index++;
-			//implemepent chgat here
+			//	figure out the chgat routine
+			//	wmove(txpad, cur_tx_index, 0);
+			//	wchgat(txpad, -1, A_REVERSE, 0, NULL);
+			
 		}
+		
 
 		if (c == (int) 'd' && cur_tx_index > 1) {
 			cur_tx_index--;
 			//implemepent chgat here
 		}
-				
+		init_pair(1, COLOR_WHITE, COLOR_BLACK);
 		y = ((cur_tx_index -1) / TXPAD_PORTAL) * TXPAD_PORTAL;
 		block = malloc(sizeof(struct block));
 		getblockhash(block, blk);
@@ -79,10 +84,13 @@ int main(int argc, char *argv[])
 		wclear(txpad);
 		tx_cnt = print_json(block, txpad, cur_tx_index - 1);
 		wclear(tx_counter);
-		transaction = retrievetx (block, cur_tx_index - 1);
 		wprintw(tx_counter, "%d Max Block: %d \t Block: %d \t Tx Cnt: %d \t Cur Tx: %d", y, max_block, blk, tx_cnt, cur_tx_index);
 		wrefresh(tx_counter);
+		wmove(txpad, cur_tx_index -1, 0);
+		wchgat(txpad, -1, A_REVERSE, COLOR_PAIR(1), NULL);
 		prefresh(txpad, y, 0, TXPAD_START_Y, 0, TXPAD_PORTAL + TXPAD_START_Y, 64);
+		transaction = retrievetx (block, cur_tx_index - 1);
+		getrawtransaction(parser, transaction);
 		FREE_BLOCK;
 
 	}
@@ -113,7 +121,21 @@ void getblockhash(struct block *block, int blk) {
 	sprintf(tmp_str, "%d", blk);
 	strcat(g_b_hash_str, tmp_str);
 	p_query(g_b_hash_str, &(block->hash));
+	
+}
 
+void getrawtransaction(WINDOW *parser, const char *str) {
+	
+	char			cmd[84];
+	char			*buf[10000];
+
+	cmd[0] = '\0';
+	strcpy(cmd, "getrawtransaction ");
+	strcat(cmd, str);
+	p_query(cmd, buf);
+	wclear(parser);
+	wprintw(parser,"%s",*buf);
+	wrefresh(parser);
 			
 }
 
@@ -126,9 +148,6 @@ int print_json(struct block *block, WINDOW *tx_list, int index) {
 	json_t *array = json_object_get(root, "tx");
         for (int i = 0; i < json_array_size(array); ++i) { 
 	      json_t *string = json_array_get(array, i);
-	      if(i == index)
-		      wattron(tx_list,A_REVERSE);
-	      else wattroff(tx_list, A_REVERSE);
 	      wprintw(tx_list, "%s", json_string_value(string));
 	}
 
@@ -159,12 +178,5 @@ const char *retrievetx(struct block *block, int index) {
 
 
 	return  json_string_value(string);
-	cmd[0] = '\0';
-	strcpy(cmd, "retrievetx ");
-
-
- //	strcat(cmd, string);
-//	p_query(cmd,  raw);
-
-	
 }
+
