@@ -22,11 +22,14 @@
 				free(block->data);\
 				free(block)
 #define MIN_BLOCK 1
+#define MAX_TXS 4500
+#define TXPAD_PORTAL 20
+#define TXPAD_START_Y 3
 
 void getblockdata(struct block *);
 void getblockhash(struct block *, int);
-char *getrawtransaction(char *string);
-int print_json(struct block *, WINDOW *);
+const char *retrievetx(struct block *, int);
+int print_json(struct block *, WINDOW *, int);
 int getmaxheight(void);
 
 int main(int argc, char *argv[])
@@ -34,47 +37,52 @@ int main(int argc, char *argv[])
 	
 	int			max_block = getmaxheight();
 	int			blk = max_block;
-	int			c, tx_cnt;
+	int			c, tx_cnt, cur_tx_index = 0, y;
 	struct block		*block;
+	const char		*transaction;
 
 	
 	NCURSES_INIT;
 	refresh();
-	
-	WINDOW *field_blk_num = newwin(1, 9, 1, 0);
-	WINDOW *header = newwin(1, 0, 0, 0);
-	WINDOW *tx_list = newwin(0, 64, 3, 0);
 
-	
-	wprintw(header,"Last Block Mined: %d", max_block);
-	wrefresh(header);
-	wprintw(field_blk_num, "%d", blk);
-	wrefresh(field_blk_num);
+	WINDOW *tx_counter = newwin(1, 0, 0, 0);
+	WINDOW *txpad = newpad(MAX_TXS,64);
+	WINDOW *parser = newwin(0,50,3,65);
 
-	while((c = getch()) != 'q') {
+        while((c = getch()) != 'q') {
 
-		
 		if (c == (int) 'j' && blk > 1) {
 			blk--;
-			wclear(field_blk_num);
-			mvwprintw(field_blk_num, 0,0, "%d", blk);
-			wrefresh(field_blk_num);
+			cur_tx_index = 1;
 		}
 
 		if (c == (int) 'k' && blk < max_block) {
 			blk++;
-			wclear(field_blk_num);
-			mvwprintw(field_blk_num, 0,0, "%d", blk);
-			wrefresh(field_blk_num);
+			cur_tx_index = 1;
 
 		}
 
-                block = malloc(sizeof(struct block));
+		if (c == (int) 'c' && cur_tx_index < tx_cnt) {
+			cur_tx_index++;
+			//implemepent chgat here
+		}
+
+		if (c == (int) 'd' && cur_tx_index > 1) {
+			cur_tx_index--;
+			//implemepent chgat here
+		}
+				
+		y = ((cur_tx_index -1) / TXPAD_PORTAL) * TXPAD_PORTAL;
+		block = malloc(sizeof(struct block));
 		getblockhash(block, blk);
 		getblockdata(block);
-		wclear(tx_list);
-		tx_cnt = print_json(block, tx_list);
-		wrefresh(tx_list);
+		wclear(txpad);
+		tx_cnt = print_json(block, txpad, cur_tx_index - 1);
+		wclear(tx_counter);
+		transaction = retrievetx (block, cur_tx_index - 1);
+		wprintw(tx_counter, "%d Max Block: %d \t Block: %d \t Tx Cnt: %d \t Cur Tx: %d", y, max_block, blk, tx_cnt, cur_tx_index);
+		wrefresh(tx_counter);
+		prefresh(txpad, y, 0, TXPAD_START_Y, 0, TXPAD_PORTAL + TXPAD_START_Y, 64);
 		FREE_BLOCK;
 
 	}
@@ -109,7 +117,7 @@ void getblockhash(struct block *block, int blk) {
 			
 }
 
-int print_json(struct block *block, WINDOW *tx_list) {
+int print_json(struct block *block, WINDOW *tx_list, int index) {
 
 	json_t			*root;
 	json_error_t		error;
@@ -118,7 +126,7 @@ int print_json(struct block *block, WINDOW *tx_list) {
 	json_t *array = json_object_get(root, "tx");
         for (int i = 0; i < json_array_size(array); ++i) { 
 	      json_t *string = json_array_get(array, i);
-	      if(i == 0)
+	      if(i == index)
 		      wattron(tx_list,A_REVERSE);
 	      else wattroff(tx_list, A_REVERSE);
 	      wprintw(tx_list, "%s", json_string_value(string));
@@ -138,18 +146,25 @@ int getmaxheight() {
 		
 }
 
-char *getrawtransaction(char *string) {
+const char *retrievetx(struct block *block, int index) {
 
 	char			cmd[84];
 	char			tmp_str[64];
-	char			**raw;
+	json_t			*root;
+	json_error_t		error;
 
+	root = json_loads(block->data, 0, &error);
+	json_t *array = json_object_get(root, "tx");
+	json_t *string = json_array_get(array, index);
+
+
+	return  json_string_value(string);
 	cmd[0] = '\0';
-	strcpy(cmd, "getrawtransaction ");
-	strcat(cmd, string);
-	p_query(cmd,  raw);
-	return *raw;
+	strcpy(cmd, "retrievetx ");
+
+
+ //	strcat(cmd, string);
+//	p_query(cmd,  raw);
+
 	
 }
-
-
